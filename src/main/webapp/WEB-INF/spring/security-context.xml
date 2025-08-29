@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:security="http://www.springframework.org/schema/security"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd http://www.springframework.org/schema/security https://www.springframework.org/schema/security/spring-security.xsd http://www.springframework.org/schema/context https://www.springframework.org/schema/context/spring-context.xsd">
+
+    <bean id="passwordEncoder" class="org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder"/>
+
+    <!-- 로그인, 로그아웃 핸들러 -->
+    <bean id="customAuthenticationSuccessHandler" class="org.example.communityapp.security.handler.CustomAuthenticationSuccessHandler"/>
+    <bean id="customAuthenticationFailureHandler" class="org.example.communityapp.security.handler.CustomAuthenticationFailureHandler"/>
+    <bean id="customLogoutSuccessHandler" class="org.example.communityapp.security.handler.CustomLogoutSuccessHandler"/>
+
+    <!--  AccessDeniedHandler & AuthenticationEntryPoint 빈 등록  -->
+    <bean id="customAccessDeniedHandler" class="org.example.communityapp.security.handler.CustomAccessDeniedHandler"/>
+    <bean id="customAuthenticationEntryPoint" class="org.example.communityapp.security.handler.CustomAuthenticationEntryPoint"/>
+
+    <!-- REST API용 Custom Handlers -->
+    <bean id="restAccessDeniedHandler" class="org.example.communityapp.security.handler.RestAccessDeniedHandler"/>
+    <bean id="restAuthenticationEntryPoint" class="org.example.communityapp.security.handler.RestAuthenticationEntryPoint"/>
+
+    <!-- MvcRequestMatcher 사용을 위해 HandlerMappingIntrospector 빈 등록 -->
+    <bean id="mvcHandlerMappingIntrospector" class="org.springframework.web.servlet.handler.HandlerMappingIntrospector"/>
+
+    <!-- REST API용 Security 설정 -->
+    <security:http pattern="/api/**" use-expressions="true" create-session="never">
+        <security:intercept-url pattern="/api/posts/**/comments" method="GET" access="permitAll()"/>
+        <security:intercept-url pattern="/api/posts/**/comments" method="POST" access="isAuthenticated()"/>
+        <security:intercept-url pattern="/api/posts/**/comments/**" access="isAuthenticated()"/>
+
+        <!-- REST API용 Custom Handler 설정 -->
+        <security:access-denied-handler ref="restAccessDeniedHandler"/>
+        <security:http-basic entry-point-ref="restAuthenticationEntryPoint"/>
+
+        <!-- REST API도 CSRF 보호 활성화 (쿠키 세션 사용 시) -->
+        <security:csrf disabled="true"/>
+    </security:http>
+
+
+    <!-- JSP 페이지용 Security 설정 (모든 요청, /api/** 제외) -->
+    <security:http use-expressions="true" auto-config="false">
+        <!-- URL 패턴별 접근 권한 설정 -->
+        <security:intercept-url pattern="/**" access="permitAll()"/>
+        <security:intercept-url pattern="/admin/**" access="hasRole('ADMIN')"/>
+
+        <!-- 폼 로그인 설정 -->
+        <security:form-login
+                login-page="/auth/login"
+                login-processing-url="/auth/login"
+                username-parameter="email"
+                password-parameter="password"
+                authentication-success-handler-ref="customAuthenticationSuccessHandler"
+                authentication-failure-handler-ref="customAuthenticationFailureHandler"
+        />
+
+        <!-- 로그아웃 설정 -->
+        <security:logout
+                logout-url="/auth/logout"
+                success-handler-ref="customLogoutSuccessHandler"/>
+
+        <!-- JSP용 Custom Handler 설정 -->
+        <security:access-denied-handler ref="customAccessDeniedHandler"/>
+        <security:http-basic entry-point-ref="customAuthenticationEntryPoint"/>
+
+        <!-- csrf 설정 (기본값: 활성화) -->
+        <security:csrf disabled="true"/>
+
+        <!-- 세션 설정: 세션 고정 공격 방지 (migrateSession: 기존 세션 유지 & 세션 ID만 새로 발급 -->
+        <security:session-management session-fixation-protection="migrateSession">
+            <security:concurrency-control max-sessions="1" expired-url="/auth/login"/>
+        </security:session-management>
+
+    </security:http>
+
+    <!-- 인증 매니저 설정 -->
+    <security:authentication-manager>
+        <security:authentication-provider user-service-ref="customUserDetailsService">
+            <security:password-encoder ref="passwordEncoder"/>
+        </security:authentication-provider>
+    </security:authentication-manager>
+
+    <context:component-scan base-package="org.example.communityapp.security"/>
+</beans>
