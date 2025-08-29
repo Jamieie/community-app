@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.example.communityapp.mappers.PostMapper">
+
+    <sql id="search">
+        <if test="(types != null and keyword != null)">
+            <foreach collection="types" item="type" open=" AND ( " separator="OR" close=")">
+                <choose>
+                    <when test='"T".equals(type)'>
+                        title LIKE CONCAT('%',#{keyword},'%')
+                    </when>
+                    <when test='"C".equals(type)'>
+                        content LIKE CONCAT('%',#{keyword},'%')
+                    </when>
+                    <when test='"W".equals(type)'>
+                        u.nickname LIKE CONCAT('%',#{keyword},'%')
+                    </when>
+                </choose>
+            </foreach>
+        </if>
+    </sql>
+
+    <select id="getPage" resultType="PostListDTO">
+        SELECT p.post_id, p.title, u.user_id, u.nickname, p.view_count, p.created_at,
+            COALESCE(c.cnt, 0) AS commentCount,
+            COALESCE(lk.cnt, 0) AS likeCount
+        FROM post p
+        JOIN users u ON u.user_id = p.writer
+        /* 댓글/좋아요를 집계 서브테이블로 미리 그룹핑 */
+        LEFT JOIN (
+            SELECT post_id, COUNT(*) AS cnt
+            FROM comment
+            WHERE is_deleted = 0
+            GROUP BY post_id
+        ) c ON c.post_id = p.post_id
+        LEFT JOIN (
+            SELECT post_id, COUNT(*) AS cnt
+            FROM likes
+            GROUP BY post_id
+        ) lk ON lk.post_id = p.post_id
+        WHERE p.is_deleted = 0
+        <include refid="search"/>
+        ORDER BY p.post_id DESC
+        LIMIT #{skip}, #{amount}
+    </select>
+
+    <select id="getTotal">
+        SELECT COUNT(*)
+        FROM post p
+        JOIN users u ON u.user_id = p.writer
+        WHERE p.post_id > 0
+        AND p.is_deleted = 0
+        <include refid="search"/>
+    </select>
+
+    <insert id="insertPost">
+        INSERT INTO post (title, content, writer, view_count, is_deleted, created_at, updated_at)
+        VALUES (#{title}, #{content}, #{writer}, #{viewCount}, #{isDeleted}, NOW(), NOW())
+    </insert>
+
+</mapper>

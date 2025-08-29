@@ -43,3 +43,7 @@ bin/
 
 ### environment variable ###
 .env
+
+### claude ###
+CLAUDE.md
+DESIGN_SYSTEM.md
