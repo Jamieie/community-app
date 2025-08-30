@@ -4,6 +4,13 @@
         "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="org.example.communityapp.mappers.PostMapper">
 
+    <select id="findById" resultType="PostVO">
+        SELECT post_id, title, content, writer, view_count, is_deleted, created_at, updated_at
+        FROM post
+        WHERE post_id = #{postId}
+        AND is_deleted = 0
+    </select>
+
     <sql id="search">
         <if test="(types != null and keyword != null)">
             <foreach collection="types" item="type" open=" AND ( " separator="OR" close=")">
@@ -55,9 +62,62 @@
         <include refid="search"/>
     </select>
 
+    <select id="getModifyForm" resultType="PostModifyForm">
+        SELECT post_id, title, content, writer
+        FROM post
+        WHERE post_id = #{postId}
+        AND is_deleted = 0
+    </select>
+
+    <select id="selectPostDetailById" resultType="PostDetailDTO">
+        SELECT p.post_id, p.title, p.content, u.user_id, u.nickname, p.view_count, p.created_at,
+            COALESCE(c.cnt, 0) AS commentCount,
+            COALESCE(lk.cnt, 0) AS likeCount
+        FROM post p
+        JOIN users u ON u.user_id = p.writer
+        LEFT JOIN (
+            SELECT post_id, COUNT(*) AS cnt
+            FROM comment
+            WHERE is_deleted = 0
+            GROUP BY post_id
+        ) c ON c.post_id = p.post_id
+        LEFT JOIN (
+            SELECT post_id, COUNT(*) AS cnt
+            FROM likes
+            GROUP BY post_id
+        ) lk ON lk.post_id = p.post_id
+        WHERE p.post_id = #{postId}
+        AND p.is_deleted = 0
+    </select>
+
     <insert id="insertPost">
+        <selectKey order="AFTER" keyProperty="postId" resultType="long">
+            SELECT LAST_INSERT_ID()
+        </selectKey>
         INSERT INTO post (title, content, writer, view_count, is_deleted, created_at, updated_at)
         VALUES (#{title}, #{content}, #{writer}, #{viewCount}, #{isDeleted}, NOW(), NOW())
     </insert>
+
+    <update id="updatePost">
+        UPDATE post
+        SET title = #{title}, content = #{content}, updated_at = NOW()
+        WHERE post_id = #{postId}
+        AND writer = #{writer}
+        AND is_deleted = 0
+    </update>
+
+    <select id="selectWriterByPostId" resultType="string">
+        SELECT writer
+        FROM post
+        WHERE post_id = #{postId}
+        AND is_deleted = 0
+    </select>
+
+    <update id="deletePostByIdAndUserId">
+        UPDATE post
+        SET is_deleted = 1
+        WHERE post_id = #{postId}
+        AND writer = #{userId}
+    </update>
 
 </mapper>

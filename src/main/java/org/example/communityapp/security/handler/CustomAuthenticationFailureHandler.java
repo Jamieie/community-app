@@ -27,6 +27,7 @@ public class CustomAuthenticationFailureHandler implements AuthenticationFailure
 
         // 세션에 에러 메시지 저장
         request.getSession().setAttribute("error", errorMessage);
+        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
         response.sendRedirect("/auth/login");
     }
 }

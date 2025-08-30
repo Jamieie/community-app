@@ -21,6 +21,11 @@
         <mvc:argument-resolvers>
             <bean class="org.springframework.security.web.method.annotation.AuthenticationPrincipalArgumentResolver"/>
         </mvc:argument-resolvers>
+
+        <!-- URL 경로 처리 설정 -->
+        <mvc:path-matching
+            trailing-slash="true"
+            registered-suffixes-only="true" />
     </mvc:annotation-driven>
 
 </beans>

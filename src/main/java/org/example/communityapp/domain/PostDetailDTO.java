@@ -5,9 +5,10 @@ import lombok.Data;
 import java.time.LocalDateTime;
 
 @Data
-public class PostListDTO {
+public class PostDetailDTO {
     private Long postId;
     private String title;
+    private String content;
     private String userId;
     private String nickname;
     private Long viewCount;

@@ -2,10 +2,7 @@ package org.example.communityapp.mappers;
 
 import lombok.extern.slf4j.Slf4j;
 import org.example.communityapp.common.enums.RoleType;
-import org.example.communityapp.domain.Criteria;
-import org.example.communityapp.domain.PostVO;
-import org.example.communityapp.domain.PostListDTO;
-import org.example.communityapp.domain.UserVO;
+import org.example.communityapp.domain.*;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,6 +10,7 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;

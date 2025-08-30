@@ -9,33 +9,26 @@
     <link rel="stylesheet" type="text/css" href="${pageContext.request.contextPath}/resources/css/posts.css">
 </head>
 <body>
-    <!-- Navigation Bar -->
-    <nav class="navbar">
-        <div class="navbar-container">
-            <a href="/" class="navbar-brand">Community App</a>
-            <div class="navbar-menu">
-                <c:choose>
-                    <c:when test="${not empty pageContext.request.userPrincipal}">
-                        <form action="/auth/logout" method="post" style="display: inline;">
-                            <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}"/>
-                            <button type="submit" class="btn btn-primary">로그아웃</button>
-                        </form>
-                    </c:when>
-                    <c:otherwise>
-                        <a href="/auth/signup" class="btn">회원가입</a>
-                        <a href="/auth/login" class="btn btn-primary">로그인</a>
-                    </c:otherwise>
-                </c:choose>
-            </div>
-        </div>
-    </nav>
+    <%@include file="../includes/navbar.jsp"%>
 
     <!-- Main Container -->
     <div class="main-container">
         <!-- Page Header -->
         <div class="page-header">
-            <h1 class="page-title">게시판</h1>
-            <p class="page-subtitle">커뮤니티의 다양한 이야기를 만나보세요</p>
+            <div class="header-content">
+                <div class="header-text">
+                    <h1 class="page-title">게시판</h1>
+                    <p class="page-subtitle">커뮤니티의 다양한 이야기를 만나보세요</p>
+                </div>
+                <div class="header-actions">
+                    <a href="/posts/register" class="btn btn-write">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
+                        </svg>
+                        글쓰기
+                    </a>
+                </div>
+            </div>
         </div>
 
         <!-- Search Section -->

@@ -1,13 +1,13 @@
 package org.example.communityapp.domain;
 
-import lombok.Data;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.ToString;
+import lombok.*;
 
 import java.time.LocalDateTime;
 
 @Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class PostVO {
     private Long postId;
     private String title;
@@ -17,4 +17,12 @@ public class PostVO {
     private Boolean isDeleted;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+
+    public PostVO(String title, String content, String writer) {
+        this.title = title;
+        this.content = content;
+        this.writer = writer;
+        this.viewCount = 0L;
+        this.isDeleted = false;
+    }
 }
