@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.example.communityapp.mappers.CommentMapper">
+
+    <insert id="insertComment">
+        <selectKey order="AFTER" keyProperty="commentId" resultType="long">
+            SELECT LAST_INSERT_ID()
+        </selectKey>
+        INSERT INTO comment (post_id, writer, content, parent_id, is_deleted, created_at, updated_at)
+        VALUES (#{postId}, #{writer}, #{content}, #{parentId}, #{isDeleted}, NOW(), NOW())
+    </insert>
+
+    <select id="selectCommentDetailById" resultType="CommentDetailDTO">
+        SELECT c.comment_id, c.post_id, c.content, c.parent_id, c.created_at,
+            u.user_id AS userId, u.nickname AS nickname
+        FROM comment c
+        JOIN users u ON u.user_id = c.writer
+        WHERE c.comment_id = #{commentId}
+        AND c.is_deleted = 0
+    </select>
+
+    <update id="updateComment">
+        UPDATE comment
+        SET content = #{content}
+        WHERE comment_id = #{commentId}
+        AND writer = #{writer}
+        AND is_deleted = 0
+    </update>
+
+    <update id="deleteCommentByIdAndUserId">
+        UPDATE comment
+        SET is_deleted = 1
+        WHERE comment_id = #{commentId}
+        AND writer = #{userId}
+    </update>
+
+    <select id="getCommentsPage" resultType="CommentDetailDTO">
+        SELECT c.comment_id, c.post_id, u.user_id, u.nickname, c.content, c.parent_id, c.created_at
+        FROM comment c
+        JOIN users u ON u.user_id = c.writer
+        WHERE c.post_id = #{postId}
+        AND c.is_deleted = 0
+        <if test="cursor.afterCreatedAt != null and cursor.afterCommentId != null">
+            AND (
+                c.created_at > #{cursor.afterCreatedAt}
+                OR (c.created_at = #{cursor.afterCreatedAt} AND c.comment_id > #{cursor.afterCommentId})
+            )
+        </if>
+        ORDER BY c.created_at ASC, c.comment_id ASC
+        LIMIT #{limit};
+    </select>
+
+    <select id="hssNext" resultType="boolean">
+        SELECT EXISTS(
+            SELECT 1
+            FROM comment
+            WHERE post_id = #{postId}
+            AND is_deleted = 0
+            AND (
+                created_at > #{cursor.afterCreatedAt}
+                OR (created_at = #{cursor.afterCreatedAt} AND comment_id > #{cursor.afterCommentId})
+            )
+        ) AS existsFlag;
+    </select>
+</mapper>

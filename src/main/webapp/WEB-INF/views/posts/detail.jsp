@@ -108,17 +108,60 @@
                 <div class="comments-header">
                     <h3>댓글 <span class="comment-count">${post.commentCount}</span></h3>
                 </div>
+                
+                <!-- Comment Input Section -->
+                <c:if test="${not empty pageContext.request.userPrincipal}">
+                    <div class="comment-input-section">
+                        <div class="comment-form">
+                            <textarea id="commentContent" placeholder="댓글을 입력하세요..." maxlength="500" rows="3"></textarea>
+                            <div class="comment-form-actions">
+                                <span class="char-count">0/500</span>
+                                <button type="button" id="submitComment" class="btn btn-primary">댓글 등록</button>
+                            </div>
+                        </div>
+                    </div>
+                </c:if>
+                
+                <c:if test="${empty pageContext.request.userPrincipal}">
+                    <div class="comment-login-prompt">
+                        <p>댓글을 작성하려면 <a href="/auth/login">로그인</a>이 필요합니다.</p>
+                    </div>
+                </c:if>
+
+                <!-- Comments Container -->
                 <div class="comments-container">
-                    <!-- 댓글은 이후 AJAX로 로딩될 예정 -->
-                    <div class="comments-placeholder">
-                        <p>댓글 기능은 곧 추가될 예정입니다.</p>
+                    <!-- 기존 댓글 영역 -->
+                    <div id="existingCommentsSection">
+                        <div id="commentsList" class="comments-list">
+                            <!-- 서버에서 로드된 댓글들 -->
+                        </div>
+                        <div id="loadMoreSection" class="load-more-section" style="display: none;">
+                            <div class="separator">
+                                <span>이전 댓글이 더 있습니다</span>
+                            </div>
+                            <button type="button" id="loadMoreComments" class="btn btn-secondary">더보기</button>
+                        </div>
+                    </div>
+                    
+                    <!-- 새 댓글과 기존 댓글 구분선 -->
+                    <div id="newCommentsSeparator" class="new-comments-separator" style="display: none;">
+                        <span>새로 작성한 댓글</span>
+                    </div>
+                    
+                    <!-- 새로 작성한 댓글 영역 -->
+                    <div id="newCommentsList" class="comments-list">
+                        <!-- 새로 작성한 댓글들 -->
+                    </div>
+                    
+                    <div id="noCommentsMessage" class="no-comments" style="display: none;">
+                        <p>아직 댓글이 없습니다. 첫 번째 댓글을 작성해보세요!</p>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- 삭제 확인 모달 -->
+    <!-- 게시글 삭제 확인 모달 -->
     <div id="deleteModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
@@ -132,6 +175,24 @@
             <div class="modal-actions">
                 <button type="button" class="btn btn-secondary" onclick="closeDeleteModal()">취소</button>
                 <button type="button" class="btn btn-danger" onclick="executeDelete()">삭제</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 댓글 삭제 확인 모달 -->
+    <div id="deleteCommentModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>댓글 삭제</h3>
+                <button type="button" class="modal-close" onclick="closeDeleteCommentModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p>정말로 이 댓글을 삭제하시겠습니까?</p>
+                <p class="modal-warning">삭제된 댓글은 복구할 수 없습니다.</p>
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="btn btn-secondary" onclick="closeDeleteCommentModal()">취소</button>
+                <button type="button" class="btn btn-danger" onclick="executeCommentDelete()">삭제</button>
             </div>
         </div>
     </div>
@@ -155,12 +216,341 @@
             form.submit();
         }
 
+        // 댓글 삭제 모달 함수들
+        let commentToDelete = null;
+        
+        function confirmDeleteComment(commentId) {
+            commentToDelete = commentId;
+            document.getElementById('deleteCommentModal').style.display = 'block';
+        }
+
+        function closeDeleteCommentModal() {
+            document.getElementById('deleteCommentModal').style.display = 'none';
+            commentToDelete = null;
+        }
+
+        function executeCommentDelete() {
+            if (commentToDelete) {
+                actualDeleteComment(commentToDelete);
+                closeDeleteCommentModal();
+            }
+        }
+
         // 모달 외부 클릭 시 닫기
         window.onclick = function(event) {
-            const modal = document.getElementById('deleteModal');
-            if (event.target === modal) {
+            const deleteModal = document.getElementById('deleteModal');
+            const deleteCommentModal = document.getElementById('deleteCommentModal');
+            if (event.target === deleteModal) {
                 closeDeleteModal();
             }
+            if (event.target === deleteCommentModal) {
+                closeDeleteCommentModal();
+            }
+        }
+
+        // Comments functionality
+        let currentCursor = null;
+        let hasMore = false;
+        const postId = ${post.postId};
+        
+        // Character count for comment textarea
+        const commentContent = document.getElementById('commentContent');
+        const charCount = document.querySelector('.char-count');
+        
+        if (commentContent) {
+            commentContent.addEventListener('input', function() {
+                const length = this.value.length;
+                charCount.textContent = length + '/500';
+            });
+        }
+
+        // Load initial comments on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            loadComments();
+        });
+
+        // Submit comment
+        const submitBtn = document.getElementById('submitComment');
+        if (submitBtn) {
+            submitBtn.addEventListener('click', function() {
+                submitComment();
+            });
+        }
+
+        // Load more comments
+        const loadMoreBtn = document.getElementById('loadMoreComments');
+        if (loadMoreBtn) {
+            loadMoreBtn.addEventListener('click', function() {
+                loadMoreComments();
+            });
+        }
+
+        // Load comments function
+        function loadComments(cursor = null) {
+            let url = '/api/posts/' + postId + '/comments?limit=10';
+            if (cursor) {
+                url += '&after=' + encodeURIComponent(cursor);
+            }
+
+            fetch(url, {
+                method: 'GET'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (cursor === null) {
+                    // Initial load
+                    displayComments(data.comments, false);
+                } else {
+                    // Load more
+                    displayComments(data.comments, true);
+                }
+                currentCursor = data.cursor;
+                hasMore = data.hasNext;
+                updateLoadMoreButton();
+            })
+            .catch(error => {
+                console.error('댓글 로드 실패:', error);
+            });
+        }
+
+        // Load more comments
+        function loadMoreComments() {
+            if (hasMore && currentCursor) {
+                loadComments(currentCursor);
+            }
+        }
+
+        // Display comments (for existing comments from server)
+        function displayComments(comments, append = false) {
+            const commentsList = document.getElementById('commentsList');
+            const noCommentsMessage = document.getElementById('noCommentsMessage');
+            
+            if (!append) {
+                commentsList.innerHTML = '';
+            }
+            
+            if (comments && comments.length > 0) {
+                noCommentsMessage.style.display = 'none';
+                
+                comments.forEach(comment => {
+                    const commentElement = createCommentElement(comment);
+                    commentsList.appendChild(commentElement);
+                });
+            } else if (!append) {
+                // Check if there are new comments before showing no comments message
+                const newCommentsList = document.getElementById('newCommentsList');
+                if (newCommentsList.children.length === 0) {
+                    noCommentsMessage.style.display = 'block';
+                }
+            }
+        }
+
+        // Create comment element
+        function createCommentElement(comment) {
+            const commentDiv = document.createElement('div');
+            commentDiv.className = 'comment-item';
+            commentDiv.setAttribute('data-comment-id', comment.commentId);
+            
+            const currentUserId = '${pageContext.request.userPrincipal.principal.userId}';
+            const isOwner = currentUserId && currentUserId === comment.userId;
+            
+            commentDiv.innerHTML = `
+                <div class="comment-header">
+                    <div class="comment-author">
+                        <svg class="stat-icon" viewBox="0 0 24 24">
+                            <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                        </svg>
+                        <span>` + comment.nickname + `</span>
+                    </div>
+                    <div class="comment-meta">
+                        <span class="comment-date">` + formatCommentDate(comment.createdAt) + `</span>
+                        ` + (isOwner ? `
+                            <div class="comment-actions">
+                                <button type="button" class="btn-text" onclick="editComment(` + comment.commentId + `)">수정</button>
+                                <button type="button" class="btn-text btn-danger" onclick="confirmDeleteComment(` + comment.commentId + `)">삭제</button>
+                            </div>
+                        ` : '') + `
+                    </div>
+                </div>
+                <div class="comment-content">
+                    <div class="comment-text">` + comment.content.replace(/\n/g, '<br>') + `</div>
+                    <div class="comment-edit-form" style="display: none;">
+                        <textarea class="edit-textarea" maxlength="500">` + comment.content + `</textarea>
+                        <div class="edit-actions">
+                            <button type="button" class="btn btn-primary btn-sm" onclick="saveCommentEdit(` + comment.commentId + `)">저장</button>
+                            <button type="button" class="btn btn-secondary btn-sm" onclick="cancelCommentEdit(` + comment.commentId + `)">취소</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            return commentDiv;
+        }
+
+        // Submit new comment
+        function submitComment() {
+            const content = commentContent.value.trim();
+            if (!content) {
+                return;
+            }
+
+            const requestBody = {
+                content: content
+            };
+
+            fetch('/api/posts/' + postId + '/comments', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(requestBody)
+            })
+            .then(response => response.json())
+            .then(comment => {
+                // Add new comment to separate new comments area
+                const newCommentsList = document.getElementById('newCommentsList');
+                const newCommentsSeparator = document.getElementById('newCommentsSeparator');
+                const noCommentsMessage = document.getElementById('noCommentsMessage');
+                
+                noCommentsMessage.style.display = 'none';
+                
+                // Show separator if this is the first new comment
+                if (newCommentsList.children.length === 0) {
+                    newCommentsSeparator.style.display = 'block';
+                }
+                
+                const newCommentElement = createCommentElement(comment);
+                newCommentsList.appendChild(newCommentElement);
+                
+                // Clear input
+                commentContent.value = '';
+                charCount.textContent = '0/500';
+                
+                // Update comment count
+                const commentCountSpan = document.querySelector('.comment-count');
+                const currentCount = parseInt(commentCountSpan.textContent);
+                commentCountSpan.textContent = currentCount + 1;
+            })
+            .catch(error => {
+                console.error('댓글 등록 실패:', error);
+            });
+        }
+
+        // Edit comment
+        function editComment(commentId) {
+            const commentItem = document.querySelector('[data-comment-id="' + commentId + '"]');
+            const commentText = commentItem.querySelector('.comment-text');
+            const editForm = commentItem.querySelector('.comment-edit-form');
+            
+            commentText.style.display = 'none';
+            editForm.style.display = 'block';
+        }
+
+        // Cancel comment edit
+        function cancelCommentEdit(commentId) {
+            const commentItem = document.querySelector('[data-comment-id="' + commentId + '"]');
+            const commentText = commentItem.querySelector('.comment-text');'[data-comment-id="' + commentId + '"]'
+            const editForm = commentItem.querySelector('.comment-edit-form');
+            
+            commentText.style.display = 'block';
+            editForm.style.display = 'none';
+        }
+
+        // Save comment edit
+        function saveCommentEdit(commentId) {
+            const commentItem = document.querySelector('[data-comment-id="' + commentId + '"]');
+            const editTextarea = commentItem.querySelector('.edit-textarea');
+            const content = editTextarea.value.trim();
+            
+            if (!content) {
+                return;
+            }
+
+            const requestBody = {
+                content: content
+            };
+
+            fetch('/api/posts/' + postId + '/comments/' + commentId, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(requestBody)
+            })
+            .then(response => response.json())
+            .then(updatedComment => {
+                // Update comment content
+                const commentText = commentItem.querySelector('.comment-text');
+                commentText.innerHTML = updatedComment.content.replace(/\n/g, '<br>');
+                
+                cancelCommentEdit(commentId);
+            })
+            .catch(error => {
+                console.error('댓글 수정 실패:', error);
+            });
+        }
+
+        // Actual delete comment function
+        function actualDeleteComment(commentId) {
+            fetch('/api/posts/' + postId + '/comments/' + commentId, {
+                method: 'DELETE'
+            })
+            .then(response => {
+                if (response.ok) {
+                    // Remove comment from DOM
+                    const commentItem = document.querySelector('[data-comment-id="' + commentId + '"]');
+                    
+                    if (commentItem) {
+                        commentItem.remove();
+                        
+                        // Update comment count
+                        const commentCountSpan = document.querySelector('.comment-count');
+                        if (commentCountSpan) {
+                            const currentCount = parseInt(commentCountSpan.textContent);
+                            commentCountSpan.textContent = Math.max(0, currentCount - 1);
+                        }
+                        
+                        // Check if we need to hide new comments separator
+                        const newCommentsList = document.getElementById('newCommentsList');
+                        const newCommentsSeparator = document.getElementById('newCommentsSeparator');
+                        if (newCommentsList && newCommentsList.children.length === 0) {
+                            newCommentsSeparator.style.display = 'none';
+                        }
+                        
+                        // Show no comments message if no comments left anywhere
+                        const existingCommentsList = document.getElementById('commentsList');
+                        if (existingCommentsList.children.length === 0 && newCommentsList.children.length === 0) {
+                            document.getElementById('noCommentsMessage').style.display = 'block';
+                        }
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('댓글 삭제 실패:', error);
+            });
+        }
+
+        // Update load more button visibility
+        function updateLoadMoreButton() {
+            const loadMoreSection = document.getElementById('loadMoreSection');
+            loadMoreSection.style.display = hasMore ? 'block' : 'none';
+        }
+
+        // Format comment date
+        function formatCommentDate(dateString) {
+            const date = new Date(dateString);
+            const now = new Date();
+            const diffMs = now - date;
+            const diffMins = Math.floor(diffMs / 60000);
+            const diffHours = Math.floor(diffMs / 3600000);
+            const diffDays = Math.floor(diffMs / 86400000);
+            
+            if (diffMins < 1) return '방금 전';
+            if (diffMins < 60) return diffMins + '분 전';
+            if (diffHours < 24) return diffHours + '시간 전';
+            if (diffDays < 7) return diffDays + '일 전';
+            
+            return date.toLocaleDateString('ko-KR');
         }
     </script>
 

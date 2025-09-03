@@ -95,9 +95,11 @@ public class PostServiceImpl implements PostService {
     @Override
     public void remove(Long postId, String userId) {
         // 게시글이 존재하지 않거나 소유자가 아니면 예외 발생
-        PostVO found = postMapper.findById(postId).orElseThrow(() ->
-                new ResourceNotFoundException("게시글", postId));
-        if (!Objects.equals(userId, found.getWriter())) {
+        String writerOfPost = postMapper.selectWriterByPostId(postId);
+        if (writerOfPost == null) {
+            throw new ResourceNotFoundException("게시글", postId);
+        }
+        if (!Objects.equals(userId, writerOfPost)) {
             throw new NotResourceOwnerException("게시글", postId);
         }
 

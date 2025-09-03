@@ -27,4 +27,6 @@ public interface PostMapper {
     String selectWriterByPostId(Long postId);
 
     int deletePostByIdAndUserId(@Param("postId") Long postId, @Param("userId") String userId);
+
+    Boolean ifExists(Long postId);
 }

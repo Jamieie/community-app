@@ -120,4 +120,12 @@
         AND writer = #{userId}
     </update>
 
+    <select id="ifExists" resultType="boolean">
+        SELECT EXISTS(
+            SELECT 1
+            FROM post
+            WHERE post_id = #{postId}
+            AND is_deleted = 0
+        ) AS existsFlag
+    </select>
 </mapper>

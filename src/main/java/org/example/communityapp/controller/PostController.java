@@ -6,7 +6,6 @@ import lombok.extern.log4j.Log4j2;
 import org.example.communityapp.domain.*;
 import org.example.communityapp.service.PostService;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.User;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -32,10 +31,7 @@ public class PostController {
 
     @GetMapping("/{postId:\\d+}")
     public String getPostDetail(@PathVariable("postId") Long postId, Model model) {
-        // FIXME) 올바르지 않은 요청에 대한 처리하기
-        if (postId <= 0) {
-            return "redirect:/posts";
-        }
+
         PostDetailDTO post = postService.getPostDetails(postId);
         model.addAttribute("post", post);
         return "/posts/detail";
@@ -62,10 +58,6 @@ public class PostController {
     public String modifyForm(@PathVariable("postId") Long postId,
                              @AuthenticationPrincipal CustomUserDetails user,
                              Model model) {
-        // FIXME) 올바르지 않은 요청에 대한 처리하기
-        if (postId <= 0) {
-            return "redirect:/posts";
-        }
 
         PostModifyForm modifyForm = postService.getModifyForm(postId, user.getUserId());
         model.addAttribute("post", modifyForm);
@@ -80,11 +72,6 @@ public class PostController {
                          @Valid @ModelAttribute ModifyPostRequestDTO modifyPostRequestDTO,
                          @AuthenticationPrincipal CustomUserDetails user) {
 
-        // FIXME) 올바르지 않은 요청에 대한 처리하기
-        if (postId <= 0) {
-            return "redirect:/posts";
-        }
-
         Long modifiedPostId = postService.modify(modifyPostRequestDTO, postId, user.getUserId());
         return "redirect:/posts/" + modifiedPostId;
     }
@@ -93,10 +80,6 @@ public class PostController {
     public String remove(@PathVariable("postId") Long postId,
                          @AuthenticationPrincipal CustomUserDetails user) {
 
-        // FIXME) 올바르지 않은 요청에 대한 처리하기
-        if (postId <= 0) {
-            return "redirect:/posts";
-        }
         postService.remove(postId, user.getUserId());
         return "redirect:/posts";
     }
