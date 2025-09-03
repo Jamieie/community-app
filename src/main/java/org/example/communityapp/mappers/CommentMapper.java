@@ -21,5 +21,5 @@ public interface CommentMapper {
 
     List<CommentDetailDTO> getCommentsPage(@Param("postId") Long postId, @Param("cursor") CursorToken cursor, @Param("limit") Integer limit);
 
-    Boolean hssNext(@Param("postId") Long postId, @Param("cursor") CursorToken cursor);
+    Boolean hasNext(@Param("postId") Long postId, @Param("cursor") CursorToken cursor);
 }

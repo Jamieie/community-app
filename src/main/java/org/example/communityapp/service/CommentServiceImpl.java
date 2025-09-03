@@ -41,7 +41,7 @@ public class CommentServiceImpl implements CommentService {
     @Override
     public Boolean hasNext(Long postId, String cursor) {
         CursorToken cursorToken = new CursorToken(cursor.trim());
-        return commentMapper.hssNext(postId, cursorToken);
+        return commentMapper.hasNext(postId, cursorToken);
     }
 
     // 댓글 등록

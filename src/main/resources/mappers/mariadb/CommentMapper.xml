@@ -52,7 +52,7 @@
         LIMIT #{limit};
     </select>
 
-    <select id="hssNext" resultType="boolean">
+    <select id="hasNext" resultType="boolean">
         SELECT EXISTS(
             SELECT 1
             FROM comment
