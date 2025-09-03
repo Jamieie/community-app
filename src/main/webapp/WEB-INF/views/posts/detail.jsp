@@ -8,6 +8,9 @@
 <%@include file="../includes/header.jsp"%>
     <link rel="stylesheet" type="text/css" href="${pageContext.request.contextPath}/resources/css/posts.css">
     <link rel="stylesheet" type="text/css" href="${pageContext.request.contextPath}/resources/css/detail.css">
+    
+    <!-- CSRF Token for AJAX requests -->
+    <sec:csrfMetaTags/>
 </head>
 <body>
     <%@include file="../includes/navbar.jsp"%>
@@ -253,6 +256,10 @@
         let hasMore = false;
         const postId = ${post.postId};
         
+        // CSRF Token 설정
+        const csrfToken = document.querySelector('meta[name="_csrf"]').getAttribute('content');
+        const csrfHeader = document.querySelector('meta[name="_csrf_header"]').getAttribute('content');
+        
         // Character count for comment textarea
         const commentContent = document.getElementById('commentContent');
         const charCount = document.querySelector('.char-count');
@@ -398,11 +405,14 @@
                 content: content
             };
 
+            const headers = {
+                'Content-Type': 'application/json'
+            };
+            headers[csrfHeader] = csrfToken;
+
             fetch('/api/posts/' + postId + '/comments', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
+                headers: headers,
                 body: JSON.stringify(requestBody)
             })
             .then(response => response.json())
@@ -470,11 +480,14 @@
                 content: content
             };
 
+            const headers = {
+                'Content-Type': 'application/json'
+            };
+            headers[csrfHeader] = csrfToken;
+
             fetch('/api/posts/' + postId + '/comments/' + commentId, {
                 method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
+                headers: headers,
                 body: JSON.stringify(requestBody)
             })
             .then(response => response.json())
@@ -492,8 +505,12 @@
 
         // Actual delete comment function
         function actualDeleteComment(commentId) {
+            const headers = {};
+            headers[csrfHeader] = csrfToken;
+            
             fetch('/api/posts/' + postId + '/comments/' + commentId, {
-                method: 'DELETE'
+                method: 'DELETE',
+                headers: headers
             })
             .then(response => {
                 if (response.ok) {

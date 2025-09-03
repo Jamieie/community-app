@@ -34,7 +34,7 @@
         <security:http-basic entry-point-ref="restAuthenticationEntryPoint"/>
 
         <!-- REST API도 CSRF 보호 활성화 (쿠키 세션 사용 시) -->
-        <security:csrf disabled="true"/>
+        <security:csrf disabled="false"/>
     </security:http>
 
 
@@ -72,7 +72,7 @@
         <security:access-denied-handler ref="customAccessDeniedHandler"/>
 
         <!-- csrf 설정 (기본값: 활성화) -->
-        <security:csrf disabled="true"/>
+        <security:csrf disabled="false"/>
 
         <!-- 세션 설정: 세션 고정 공격 방지 (migrateSession: 기존 세션 유지 & 세션 ID만 새로 발급 -->
         <security:session-management session-fixation-protection="migrateSession">
