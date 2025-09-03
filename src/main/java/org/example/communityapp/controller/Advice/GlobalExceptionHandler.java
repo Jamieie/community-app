@@ -1,7 +1,7 @@
 package org.example.communityapp.controller.Advice;
 
 import jakarta.servlet.http.HttpServletRequest;
-import lombok.extern.log4j.Log4j2;
+import lombok.extern.slf4j.Slf4j;
 import org.example.communityapp.Exception.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -14,7 +14,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.util.Map;
 
-@Log4j2
+@Slf4j
 @ControllerAdvice
 public class GlobalExceptionHandler {
 

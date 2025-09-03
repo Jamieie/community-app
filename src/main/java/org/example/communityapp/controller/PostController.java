@@ -2,7 +2,7 @@ package org.example.communityapp.controller;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.log4j.Log4j2;
+import lombok.extern.slf4j.Slf4j;
 import org.example.communityapp.domain.*;
 import org.example.communityapp.service.PostService;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -15,7 +15,7 @@ import java.util.List;
 @Controller
 @RequestMapping("/posts")
 @RequiredArgsConstructor
-@Log4j2
+@Slf4j
 public class PostController {
 
     private final PostService postService;

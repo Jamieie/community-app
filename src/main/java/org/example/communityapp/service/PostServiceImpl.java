@@ -1,7 +1,7 @@
 package org.example.communityapp.service;
 
 import lombok.RequiredArgsConstructor;
-import lombok.extern.log4j.Log4j2;
+import lombok.extern.slf4j.Slf4j;
 import org.example.communityapp.Exception.*;
 import org.example.communityapp.domain.*;
 import org.example.communityapp.mappers.PostMapper;
@@ -14,7 +14,7 @@ import java.util.Objects;
 @Service
 @Transactional
 @RequiredArgsConstructor
-@Log4j2
+@Slf4j
 public class PostServiceImpl implements PostService {
 
     private final PostMapper postMapper;

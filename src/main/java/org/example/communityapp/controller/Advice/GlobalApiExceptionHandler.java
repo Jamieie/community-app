@@ -1,6 +1,6 @@
 package org.example.communityapp.controller.Advice;
 
-import lombok.extern.log4j.Log4j2;
+import lombok.extern.slf4j.Slf4j;
 import org.example.communityapp.Exception.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -13,7 +13,7 @@ import org.springframework.web.servlet.NoHandlerFoundException;
 
 import java.util.Map;
 
-@Log4j2
+@Slf4j
 @RestControllerAdvice(annotations = RestController.class)
 public class GlobalApiExceptionHandler {
 

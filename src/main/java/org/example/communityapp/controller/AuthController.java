@@ -2,7 +2,7 @@ package org.example.communityapp.controller;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.log4j.Log4j2;
+import lombok.extern.slf4j.Slf4j;
 import org.example.communityapp.domain.SignupRequestDTO;
 import org.example.communityapp.service.AuthService;
 import org.example.communityapp.service.AuthServiceImpl;
@@ -13,7 +13,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 @Controller
 @RequestMapping("/auth")
-@Log4j2
+@Slf4j
 @RequiredArgsConstructor
 public class AuthController {
 
