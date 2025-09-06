@@ -1,0 +1,83 @@
+name: Deploy to Google Cloud
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up JDK 21
+      uses: actions/setup-java@v4
+      with:
+        java-version: '21'
+        distribution: 'temurin'
+        
+    - name: Cache Gradle packages
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.gradle/caches
+          ~/.gradle/wrapper
+        key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+        restore-keys: |
+          ${{ runner.os }}-gradle-
+          
+    - name: Build with Gradle (skip tests)
+      run: ./gradlew clean build -x test
+      
+    - name: Build Docker image
+      run: docker build -t community-app .
+      
+    - name: Save Docker image
+      run: docker save community-app | gzip > community-app.tar.gz
+      
+    - name: Deploy to Google Cloud instance
+      uses: appleboy/ssh-action@v1.0.0
+      with:
+        host: ${{ secrets.GCP_HOST }}
+        username: ${{ secrets.GCP_USERNAME }}
+        key: ${{ secrets.GCP_SSH_KEY }}
+        script: |
+          # Stop existing container
+          docker stop community-app || true
+          docker rm community-app || true
+          
+          # Remove old image
+          docker rmi community-app || true
+          
+          # Load new image
+          docker load < /tmp/community-app.tar.gz
+          
+          # Run new container
+          docker run -d \
+            --name community-app \
+            --network host \
+            -e DB_TYPE=mariadb \
+            -e DB_URL=${{ secrets.DB_URL }} \
+            -e DB_USERNAME=${{ secrets.DB_USERNAME }} \
+            -e DB_PASSWORD=${{ secrets.DB_PASSWORD }} \
+            -e DB_DRIVER=org.mariadb.jdbc.Driver \
+            -e DB_MINIMUM_IDLE=2 \
+            -e DB_MAXIMUM_POOL_SIZE=10 \
+            -e DB_CONNECTION_TIMEOUT=30000 \
+            community-app
+            
+          # Clean up
+          rm -f /tmp/community-app.tar.gz
+          
+    - name: Copy Docker image to server
+      uses: appleboy/scp-action@v0.1.5
+      with:
+        host: ${{ secrets.GCP_HOST }}
+        username: ${{ secrets.GCP_USERNAME }}
+        key: ${{ secrets.GCP_SSH_KEY }}
+        source: community-app.tar.gz
+        target: /tmp/
