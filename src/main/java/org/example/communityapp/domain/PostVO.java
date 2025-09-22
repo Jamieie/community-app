@@ -2,6 +2,7 @@ package org.example.communityapp.domain;
 
 import lombok.*;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 
 @Data
@@ -15,8 +16,8 @@ public class PostVO {
     private String writer;
     private Long viewCount;
     private Boolean isDeleted;
-    private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
+    private Instant createdAt;
+    private Instant updatedAt;
 
     public PostVO(String title, String content, String writer) {
         this.title = title;

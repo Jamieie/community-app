@@ -35,6 +35,7 @@ public class CommentApiController {
             hasNext = commentService.hasNext(postId, cursor);
         }
 
+
         return ResponseEntity.status(HttpStatus.OK)
                 .body(new CommentPageResponse(comments, cursor, hasNext));
     }

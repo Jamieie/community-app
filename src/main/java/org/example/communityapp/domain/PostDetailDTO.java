@@ -2,6 +2,7 @@ package org.example.communityapp.domain;
 
 import lombok.Data;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 
 @Data
@@ -14,5 +15,5 @@ public class PostDetailDTO {
     private Long viewCount;
     private Long commentCount;
     private Long likeCount;
-    private LocalDateTime createdAt;
+    private Instant createdAt;
 }

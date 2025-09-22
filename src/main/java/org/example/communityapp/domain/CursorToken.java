@@ -12,7 +12,7 @@ import java.time.format.DateTimeParseException;
 @AllArgsConstructor
 public class CursorToken {
 
-    private LocalDateTime afterCreatedAt;
+    private Instant afterCreatedAt;
     private Long afterCommentId;
 
     public CursorToken(String cursor) {
@@ -22,13 +22,13 @@ public class CursorToken {
             return;
         }
 
-        LocalDateTime parsedDate;
+        Instant parsedDate;
         Long parsedId;
 
         // cursor 파싱하여 값 초기화
         String[] cursorStrArr = cursor.trim().split("_", 2);
         try {
-            parsedDate = LocalDateTime.parse(cursorStrArr[0]);
+            parsedDate = Instant.parse(cursorStrArr[0]);
             parsedId = Long.parseLong(cursorStrArr[1]);
         } catch (DateTimeParseException | NumberFormatException e) {
             throw new InvalidCommentCursorException("커서 형식이 올바르지 않습니다. (날짜_댓글ID)");

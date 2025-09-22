@@ -41,8 +41,9 @@
                         <svg class="stat-icon" viewBox="0 0 24 24">
                             <path d="M9 11H7v2h2v-2zm4 0h-2v2h2v-2zm4 0h-2v2h2v-2zm2-7h-1V2h-2v2H8V2H6v2H5c-1.1 0-1.99.9-1.99 2L3 20c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V9h14v11z"/>
                         </svg>
-                        <c:set var="createdAt" value="${post.createdAt}" />
-                        <span>${fn:substring(createdAt, 0, 10)} ${fn:substring(createdAt, 11, 16)}</span>
+                        <span data-utc-time="${post.createdAt}" class="local-time">
+                            ${fn:substring(post.createdAt, 0, 10)} ${fn:substring(post.createdAt, 11, 16)}
+                        </span>
                     </div>
                 </div>
                 
@@ -274,7 +275,50 @@
         // Load initial comments on page load
         document.addEventListener('DOMContentLoaded', function() {
             loadComments();
+            convertUTCToLocalTime();
         });
+
+        // Convert UTC time to local time
+        function convertUTCToLocalTime() {
+            const localTimeElements = document.querySelectorAll('.local-time');
+            localTimeElements.forEach(element => {
+                const utcTime = element.getAttribute('data-utc-time');
+                if (utcTime) {
+                    const localTime = formatLocalDateTime(utcTime);
+                    element.textContent = localTime;
+                }
+            });
+        }
+
+        // Format UTC datetime to local datetime string
+        function formatLocalDateTime(utcDateString) {
+            // Handle both ISO format (with Z) and custom format
+            let date;
+            if (utcDateString.includes('T') && utcDateString.endsWith('Z')) {
+                // ISO format: 2024-03-15T10:30:45Z
+                date = new Date(utcDateString);
+            } else if (utcDateString.includes('T')) {
+                // ISO format without Z: 2024-03-15T10:30:45
+                date = new Date(utcDateString + 'Z');
+            } else {
+                // Custom format: assume it's already in YYYY-MM-DD HH:mm format
+                // Convert to ISO format for parsing
+                const isoString = utcDateString.replace(' ', 'T') + 'Z';
+                date = new Date(isoString);
+            }
+            
+            // Format to local time (브라우저 로케일 사용)
+            const formatter = new Intl.DateTimeFormat(undefined, {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: false
+            });
+            
+            return formatter.format(date);
+        }
 
         // Submit comment
         const submitBtn = document.getElementById('submitComment');
@@ -555,19 +599,35 @@
 
         // Format comment date
         function formatCommentDate(dateString) {
-            const date = new Date(dateString);
+            // Parse UTC time properly
+            let date;
+            if (dateString.includes('T') && dateString.endsWith('Z')) {
+                // ISO format: 2024-03-15T10:30:45Z
+                date = new Date(dateString);
+            } else if (dateString.includes('T')) {
+                // ISO format without Z: 2024-03-15T10:30:45
+                date = new Date(dateString + 'Z');
+            } else {
+                // Custom format: assume it's already in YYYY-MM-DD HH:mm format
+                const isoString = dateString.replace(' ', 'T') + 'Z';
+                date = new Date(isoString);
+            }
+            
             const now = new Date();
             const diffMs = now - date;
             const diffMins = Math.floor(diffMs / 60000);
             const diffHours = Math.floor(diffMs / 3600000);
-            const diffDays = Math.floor(diffMs / 86400000);
             
             if (diffMins < 1) return '방금 전';
             if (diffMins < 60) return diffMins + '분 전';
             if (diffHours < 24) return diffHours + '시간 전';
-            if (diffDays < 7) return diffDays + '일 전';
             
-            return date.toLocaleDateString('ko-KR');
+            // 하루 이상된 댓글은 날짜와 시간 모두 표시 (브라우저 로케일 사용)
+            return date.toLocaleDateString() + ' ' + date.toLocaleTimeString(undefined, {
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: false
+            });
         }
     </script>
 

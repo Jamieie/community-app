@@ -18,8 +18,8 @@ public class CommentDetailDTO {
     private String nickname;
     private String content;
     private Long patientId;
-    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
-    private LocalDateTime createdAt;
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ssX", timezone = "UTC")
+    private Instant createdAt;
 
     @JsonIgnore
     public String getCursor() {

@@ -99,9 +99,8 @@
                                 </div>
                             </div>
                             <div class="post-author">${post.nickname}</div>
-                            <div class="post-date">
-                                <c:set var="createdAt" value="${post.createdAt}" />
-                                ${fn:substring(createdAt, 0, 10)}
+                            <div class="post-date local-time" data-utc-time="${post.createdAt}">
+                                ${fn:substring(post.createdAt, 0, 10)}
                             </div>
                         </div>
                     </c:forEach>
@@ -159,7 +158,51 @@
                     return false;
                 }
             });
+
+            convertUTCToLocalTime();
         });
+
+        // Convert UTC time to local time
+        function convertUTCToLocalTime() {
+            const localTimeElements = document.querySelectorAll('.local-time');
+            localTimeElements.forEach(element => {
+                const utcTime = element.getAttribute('data-utc-time');
+                if (utcTime) {
+                    const localTime = formatLocalDateTime(utcTime);
+                    element.textContent = localTime;
+                }
+            });
+        }
+
+        // Format UTC datetime to local datetime string
+        function formatLocalDateTime(utcDateString) {
+            // Handle both ISO format (with Z) and custom format
+            let date;
+            if (utcDateString.includes('T') && utcDateString.endsWith('Z')) {
+                // ISO format: 2024-03-15T10:30:45Z
+                date = new Date(utcDateString);
+            } else if (utcDateString.includes('T')) {
+                // ISO format without Z: 2024-03-15T10:30:45
+                date = new Date(utcDateString + 'Z');
+            } else {
+                // Custom format: assume it's already in YYYY-MM-DD HH:mm format
+                // Convert to ISO format for parsing
+                const isoString = utcDateString.replace(' ', 'T') + 'Z';
+                date = new Date(isoString);
+            }
+
+            const now = new Date();
+            const diffMs = now - date;
+            const diffMins = Math.floor(diffMs / 60000);
+            const diffHours = Math.floor(diffMs / 3600000);
+
+            if (diffMins < 1) return '방금 전';
+            if (diffMins < 60) return diffMins + '분 전';
+            if (diffHours < 24) return diffHours + '시간 전';
+
+            // 하루 이상된 게시글은 날짜만 표시 (브라우저 로케일 사용)
+            return date.toLocaleDateString();
+        }
     </script>
 </body>
 </html>
